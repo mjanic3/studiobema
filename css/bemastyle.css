@@ -1867,10 +1867,7 @@ input:focus, textarea:focus, select:focus{
 		/*	SEARCH BAR   */
 	
 	.pageTitleStatic {
-  position: absolute;
-  left: 80px; /* matches your measured offset */
-  top: 50%;
-  transform: translateY(-50%);
+  display: none; /* hidden on mobile so the title can't overlap the + Menu button */
 }
 
 .searchBar {
