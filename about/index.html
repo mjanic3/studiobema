@@ -42,7 +42,35 @@
 	
 
 	<a href="index.html" target="_self"><div class="portrait">About</div></a>
+<button class="mobileToolsBtn" id="mobileToolsBtn">+ Menu</button>
+
+<div class="mobilePanel" id="mobilePanel">
+  <div class="searchBarMobile">
+    <input
+      id="siteSearchMobile"
+      type="text"
+      placeholder="Type to search"
+      autocomplete="off"
+    />
+  </div>
+
+  <div class="mobilePanelSection">
+    <div class="mobilePanelTitle">Favorites</div>
+    <div class="mobileLinks">
+
+     <a href="../trap/index.html" target="_self"><img class="mobileprofilePic" src="../img/home/posts/02_trap_profile.jpg" alt=""/>Theatre Posters</a>
+
+     <a href="../exbf/index.html" target="_self"><img class="mobileprofilePic" src="../img/home/posts/03_future_profile.jpg" alt=""/>Future Ex-BF</a>
+
+          <a href="../nexus6/index.html" target="_self"><img class="mobileprofilePic" src="../img/home/posts/00_nexus.jpg" alt=""/>Nexus 6 Portraits</a>
+
+    </div>
+  </div>
 </div>
+
+</div>
+
+	<div class="mobileBackdrop" id="mobileBackdrop"></div>
 	
 	
 
@@ -278,5 +306,132 @@ document.addEventListener('DOMContentLoaded', function () {
 		
 	
 </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('mobileToolsBtn');
+  const panel = document.getElementById('mobilePanel');
+  if (!btn || !panel) return;
+
+  // Menu open/close button
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    panel.classList.toggle('is-open');
+  });
+
+  // Close when tapping outside
+  document.addEventListener('click', () => panel.classList.remove('is-open'));
+  panel.addEventListener('click', (e) => e.stopPropagation());
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const panel = document.querySelector('.mobilePanel');
+  const backdrop = document.getElementById('mobileBackdrop');
+  if (!panel || !backdrop) return;
+
+  // Keep backdrop in sync whenever the panel is toggled
+  function syncBackdrop() {
+    backdrop.classList.toggle('is-open', panel.classList.contains('is-open'));
+  }
+
+  // 1) If your code toggles the panel class somewhere else,
+  // this observer will automatically sync the backdrop.
+  const observer = new MutationObserver(syncBackdrop);
+  observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
+
+  // 2) Click backdrop to close
+  backdrop.addEventListener('click', function () {
+    panel.classList.remove('is-open');
+    backdrop.classList.remove('is-open');
+  });
+
+  // 3) Close on Escape
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      panel.classList.remove('is-open');
+      backdrop.classList.remove('is-open');
+    }
+  });
+
+  // Initialize once on load
+  syncBackdrop();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  // Grab both search inputs (if one doesn't exist on a page, that's fine)
+  const inputs = document.querySelectorAll('#siteSearch, #siteSearchMobile');
+  if (!inputs.length) return;
+
+  const MIN_CHARS = 3;
+
+  const cards = Array.from(
+    document.querySelectorAll('.post, .post_about, .post_profile')
+  );
+
+  // Save original HTML + display so we can fully restore between searches
+  cards.forEach(card => {
+    card.dataset.originalHtml = card.innerHTML;
+
+    const cs = window.getComputedStyle(card);
+    card.dataset.originalDisplay = (cs.display === 'none') ? '' : cs.display;
+  });
+
+  function runSearch(raw) {
+    const q = raw.trim().toLowerCase();
+
+    // Restore everything first (including any previous highlighting)
+    cards.forEach(card => {
+      card.innerHTML = card.dataset.originalHtml;
+      card.style.display = card.dataset.originalDisplay || '';
+    });
+
+    // If too short, stop after restoring
+    if (q.length < MIN_CHARS) return;
+
+    // Escape regex characters in the query
+    const safeQ = q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp('(' + safeQ + ')', 'gi');
+
+    cards.forEach(card => {
+      // Use *visible* text (not HTML) for matching
+      const text = card.innerText.toLowerCase();
+      const match = text.includes(q);
+
+      if (!match) {
+        card.style.display = 'none';
+        return;
+      }
+
+      // Highlight only inside the readable description blocks
+      const targets = card.querySelectorAll('.postDescription');
+      targets.forEach(el => {
+        el.innerHTML = el.innerHTML.replace(
+          regex,
+          '<span class="search-highlight">$1</span>'
+        );
+      });
+    });
+  }
+
+  // Wire up both inputs
+  inputs.forEach(input => {
+    input.addEventListener('input', function () {
+      // Optional: keep both inputs in sync visually
+      inputs.forEach(other => {
+        if (other !== input) other.value = input.value;
+      });
+
+      runSearch(input.value);
+    });
+  });
+
+});
+</script>
 </body>
 </html>
