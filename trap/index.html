@@ -37,7 +37,35 @@
 	
 
 	<a href="../about/index.html" target="_self"><div class="portrait">About</div></a>
+
+<button class="mobileToolsBtn" id="mobileToolsBtn">+ Menu</button>
+
+<div class="mobilePanel" id="mobilePanel">
+  <div class="searchBarMobile">
+    <input
+      id="siteSearchMobile"
+      type="text"
+      placeholder="Type to search"
+      autocomplete="off"
+    />
+  </div>
+
+  <div class="mobilePanelSection">
+    <div class="mobilePanelTitle">Favorites</div>
+    <div class="mobileLinks">
+
+     <a href="../trap/index.html" target="_self"><img class="mobileprofilePic" src="../img/home/posts/02_trap_profile.jpg" alt=""/>Theatre Posters</a>
+
+     <a href="../exbf/index.html" target="_self"><img class="mobileprofilePic" src="../img/home/posts/03_future_profile.jpg" alt=""/>Future Ex-BF</a>
+
+          <a href="../nexus6/index.html" target="_self"><img class="mobileprofilePic" src="../img/home/posts/00_nexus.jpg" alt=""/>Nexus 6 Portraits</a>
+
+    </div>
+  </div>
 </div>
+</div>
+
+	<div class="mobileBackdrop" id="mobileBackdrop"></div>
 	
 
 	
@@ -1017,5 +1045,132 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	
 	
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('mobileToolsBtn');
+  const panel = document.getElementById('mobilePanel');
+  if (!btn || !panel) return;
+
+  // Menu open/close button
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    panel.classList.toggle('is-open');
+  });
+
+  // Close when tapping outside
+  document.addEventListener('click', () => panel.classList.remove('is-open'));
+  panel.addEventListener('click', (e) => e.stopPropagation());
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const panel = document.querySelector('.mobilePanel');
+  const backdrop = document.getElementById('mobileBackdrop');
+  if (!panel || !backdrop) return;
+
+  // Keep backdrop in sync whenever the panel is toggled
+  function syncBackdrop() {
+    backdrop.classList.toggle('is-open', panel.classList.contains('is-open'));
+  }
+
+  // 1) If your code toggles the panel class somewhere else,
+  // this observer will automatically sync the backdrop.
+  const observer = new MutationObserver(syncBackdrop);
+  observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
+
+  // 2) Click backdrop to close
+  backdrop.addEventListener('click', function () {
+    panel.classList.remove('is-open');
+    backdrop.classList.remove('is-open');
+  });
+
+  // 3) Close on Escape
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      panel.classList.remove('is-open');
+      backdrop.classList.remove('is-open');
+    }
+  });
+
+  // Initialize once on load
+  syncBackdrop();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  // Mobile menu search: filters this page's posters.
+  // A poster = a .description block + the .port3 image right after it.
+  const input = document.getElementById('siteSearchMobile');
+  if (!input) return;
+
+  const MIN_CHARS = 3;
+
+  const sections = Array.from(document.querySelectorAll('.content'));
+  const units = Array.from(document.querySelectorAll('.description')).map(desc => {
+    let img = desc.nextElementSibling;
+    while (img && !img.classList.contains('port3')) img = img.nextElementSibling;
+    return { desc, img };
+  });
+
+  // Save original HTML + display so searches can fully restore
+  units.forEach(u => {
+    u.descHtml = u.desc.innerHTML;
+    u.descDisplay = u.desc.style.display;
+    if (u.img) u.imgDisplay = u.img.style.display;
+  });
+  sections.forEach(s => { s.displaySaved = s.style.display; });
+
+  function runSearch(raw) {
+    const q = raw.trim().toLowerCase();
+
+    // Restore everything first (including any previous highlighting)
+    units.forEach(u => {
+      u.desc.innerHTML = u.descHtml;
+      u.desc.style.display = u.descDisplay;
+      if (u.img) u.img.style.display = u.imgDisplay;
+    });
+    sections.forEach(s => { s.style.display = s.displaySaved; });
+
+    // If too short, stop after restoring
+    if (q.length < MIN_CHARS) return;
+
+    // Escape regex characters in the query
+    const safeQ = q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp('(' + safeQ + ')', 'gi');
+
+    units.forEach(u => {
+      const match = u.desc.innerText.toLowerCase().includes(q);
+
+      if (!match) {
+        u.desc.style.display = 'none';
+        if (u.img) u.img.style.display = 'none';
+        return;
+      }
+
+      u.desc.innerHTML = u.desc.innerHTML.replace(
+        regex,
+        '<span class="search-highlight">$1</span>'
+      );
+    });
+
+    // Hide any era section whose posters are all filtered out
+    sections.forEach(s => {
+      const anyVisible = Array.from(s.querySelectorAll('.description'))
+        .some(d => d.style.display !== 'none');
+      if (!anyVisible) s.style.display = 'none';
+    });
+  }
+
+  input.addEventListener('input', function () {
+    runSearch(input.value);
+  });
+
+});
+</script>
 </body>
 </html>
